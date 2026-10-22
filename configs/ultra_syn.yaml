@@ -1,0 +1,51 @@
+# ===========================================================================
+# ULTRA-Syn (arm: ultra_syn) -- same synthetic corpus, STANDARD supervision
+#
+# Paper Table 1, row 3 (Synthetic + standard): mean MRR .355 +/- .005 on
+# the 54 zero-shot graphs (.354 disjoint / .356 proximal / .177
+# external-hard). This arm isolates the supervision axis of the 2x2
+# source x supervision factorial (§4.1): corpus is held identical to
+# configs/trace.yaml and only the task construction reverts to the
+# ULTRA-style random split.
+#
+# Standard supervision (Appendix I): all categories of each synthetic KG
+# are pooled and randomly split 80/10/10, queries are sampled uniformly
+# from the training split, and selection uses the same 200 held-out KGs.
+# Corpus generation is therefore shared with TRACE:
+#   python scripts/generate_corpus.py --config configs/trace.yaml
+# ===========================================================================
+
+arm: ultra_syn
+corpus_dir: data/corpus/trace     # identical 2,000-KG TRACE corpus
+out_dir:    checkpoints/ultra_syn
+
+# Standard (premise-blind) supervision: no observable/target roles by
+# provenance; body triples of derived queries land on both sides of the
+# random split ("premise hiding", §1).
+supervision: standard
+
+# Training (released ULTRA configuration, unchanged across every arm)
+n_steps:                 200000
+batch_size:              64
+lr:                      0.0005
+n_negatives:             128
+adversarial_temperature: 1.0
+checkpoint_every:        10000
+
+# Random-split task construction samples queries uniformly from the
+# pooled training split; no derived/non-derived mixing exists (the value
+# is carried for config-schema parity).
+derived_frac: 0.5
+
+generator:
+  n_kg:      2000          # same corpus as TRACE: 1,800 train + 200 selection
+  use_rules: true          # rules exist in the corpus; this arm just ignores
+                           # their provenance when building queries
+
+# ULTRA reasoner, frozen (Appendix O)
+rel_model:
+  num_layers: 6
+  hidden_dim: 64
+entity_model:
+  num_layers: 6
+  hidden_dim: 64

@@ -1,0 +1,43 @@
+# ===========================================================================
+# Corpus-level control: Edge-Matched (arm: control_edge_matched)
+#
+# Paper §4.3 / Table 4: mean MRR .349 all / .361 disjoint / .331 proximal
+# / .183 external-hard. At equal unique edges (545K, matching ULTRA-Real's
+# 544,534 canonical training triples), more topologies help: 3-Cycled
+# (.339) < Edge-Matched (.349) < Many-Small (.356) -- ruling out edge
+# count and cycling as the explanation of the TRACE gain.
+#
+# Construction (Appendix H): eight full-generator KGs whose edge budgets
+# are constrained to total 545K training edges (52-83K each), visited
+# ~25K times each.
+# Generate with:
+#   python scripts/generate_corpus.py --config configs/control_edge_matched.yaml
+# ===========================================================================
+
+arm: control_edge_matched
+corpus_dir: data/corpus/control_edge_matched
+out_dir:    checkpoints/control_edge_matched
+
+supervision: premise_faithful   # rules + provenance-aware supervision (all controls)
+
+# Training (released ULTRA configuration, identical to every other arm)
+n_steps:                 200000
+batch_size:              64
+lr:                      0.0005
+n_negatives:             128
+adversarial_temperature: 1.0
+checkpoint_every:        10000
+derived_frac:            0.5
+
+generator:
+  n_kg: 8                       # 8 full-generator KGs (App. H)
+  use_rules: true
+  total_edge_budget: 545000     # constrained total (~52-83K edges per KG)
+
+# ULTRA reasoner, frozen (Appendix O)
+rel_model:
+  num_layers: 6
+  hidden_dim: 64
+entity_model:
+  num_layers: 6
+  hidden_dim: 64

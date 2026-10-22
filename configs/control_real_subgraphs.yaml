@@ -1,0 +1,51 @@
+# ===========================================================================
+# Corpus-level control: Real-Subgraphs (arm: control_real_subgraphs)  [NEW]
+#
+# Paper §4.3 / Table 4: mean MRR .361 all / .351 disjoint / .375 proximal
+# / .169 external-hard (1,800 training subgraphs, <=545K edges, 111
+# visits/KG, 56 GPU-h). Real-subgraph diversity improves the aggregate
+# but helps source-disjoint graphs (.351) less than synthetic rules do
+# (.369) -- authenticity is not the active ingredient for the disjoint
+# slice.
+#
+# Construction (Appendix H): 2,000 subgraphs of FB15k-237, WN18RR and
+# CoDEx-M obtained by random-walk entity sampling with target size ~
+# LogU(100, 30K) and random edge retention ~ U(0.3, 1), trained with
+# STANDARD supervision (as in ULTRA-Real; there is no provenance to keep
+# faithful on mined real subgraphs).
+# ===========================================================================
+
+arm: control_real_subgraphs
+corpus_dir: data/corpus/control_real_subgraphs
+out_dir:    checkpoints/control_real_subgraphs
+
+supervision: standard           # standard (ULTRA-style) supervision per App. H
+
+# Training (released ULTRA configuration, identical to every other arm)
+n_steps:                 200000
+batch_size:              64
+lr:                      0.0005
+n_negatives:             128
+adversarial_temperature: 1.0
+checkpoint_every:        10000
+derived_frac:            0.5    # carried for config-schema parity (standard split)
+
+generator:
+  n_kg: 2000                    # 2,000 subgraphs (App. H)
+
+# Subgraph sampler over the three real pretraining graphs.
+# Target subgraph size ~ LogU(100, 30000); edge retention ~ U(0.3, 1.0)
+# applied after the induced subgraph is extracted (Appendix H).
+real:
+  subgraph:
+    kg_dir:       data/pretraining
+    walker_steps: 80            # random-walk entity sampling
+    min_entities: 40            # reject subgraphs below this size
+
+# ULTRA reasoner, frozen (Appendix O)
+rel_model:
+  num_layers: 6
+  hidden_dim: 64
+entity_model:
+  num_layers: 6
+  hidden_dim: 64

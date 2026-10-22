@@ -1,0 +1,48 @@
+# ===========================================================================
+# Corpus-level control: Many-Small (arm: control_many_small)  [NEW]
+#
+# Paper §4.3 / Table 4: mean MRR .356 all / .364 disjoint / .344 proximal
+# / .187 external-hard (1,800 training KGs, 545K edges, 111 visits/KG,
+# 58 GPU-h). Matches TRACE's graph count and Edge-Matched's edge budget
+# simultaneously, so neither topology count nor edge count alone explains
+# the TRACE gain -- the missing ingredient is the rule structure.
+#
+# Construction (Appendix H): 2,000 KGs drawn with n_ent ~ LogU(40, 400)
+# and mu ~ LogU(2, 6) and relaxed acceptance filters (|d_train| >= 10,
+# |Q_val| >= 5 instead of the defaults 100/50), totaling ~545K edges.
+# Generate with:
+#   python scripts/generate_corpus.py --config configs/control_many_small.yaml
+# ===========================================================================
+
+arm: control_many_small
+corpus_dir: data/corpus/control_many_small
+out_dir:    checkpoints/control_many_small
+
+supervision: premise_faithful   # rules + provenance-aware supervision (all controls)
+
+# Training (released ULTRA configuration, identical to every other arm)
+n_steps:                 200000
+batch_size:              64
+lr:                      0.0005
+n_negatives:             128
+adversarial_temperature: 1.0
+checkpoint_every:        10000
+derived_frac:            0.5
+
+generator:
+  n_kg:      2000               # 1,800 train + 200 selection, like TRACE
+  use_rules: true
+  small_mode: true              # many-small regime (App. H)
+  n_ent_range: [40, 400]        # n_ent ~ LogU(40, 400)
+  mu_range:    [2, 6]           # edges per entity ~ LogU(2, 6)
+  min_derived_train: 10         # relaxed filter (default 100)
+  min_q_val:          5         # relaxed filter (default 50)
+  total_edge_budget: 545000     # ~545K edges total, matching Edge-Matched
+
+# ULTRA reasoner, frozen (Appendix O)
+rel_model:
+  num_layers: 6
+  hidden_dim: 64
+entity_model:
+  num_layers: 6
+  hidden_dim: 64

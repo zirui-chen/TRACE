@@ -1,0 +1,50 @@
+# ===========================================================================
+# Sensitivity analysis: split_body_observable  (arm: trace) -- Table 10, axis (d) split = (i) body observable, pooled 80/10/10
+#
+# Table 10, row: syn-val MRR .522   |   real-54 MRR .362
+#
+# Separates premise visibility from split ratios (App. K): rule bodies
+# stay observable, but derived and background triples share one pooled
+# random 80/10/10 split. Default: provenance-aware splits, .531 / .369.
+#
+# For every axis the DEFAULT (bold row in Table 10) is the synthetic-validation
+# argmax: syn-val .531 / real-54 .369 (configs/trace.yaml). 3 seeds per
+# configuration (default: 5); syn-val is the selection criterion, real-54 MRR
+# was computed once after freezing (Appendix K).
+#
+# Scoring uses a common pool of 200 held-out synthetic KGs per configuration,
+# merged across all configurations of the axis, so no configuration is favored
+# by its own validation distribution (Appendix K).
+# Generate with:
+#   python scripts/generate_corpus.py --config configs/sensitivity/split_body_observable.yaml
+# ===========================================================================
+
+arm: trace
+corpus_dir: data/corpus/sensitivity/split_body_observable
+out_dir:    checkpoints/sensitivity/split_body_observable
+
+supervision: premise_faithful   # default TRACE task construction unless a
+                                # split_ablation above overrides it
+
+split_ablation: body_observable_pooled
+
+# Training (released ULTRA configuration, Appendix O; same for every arm)
+n_steps:                 200000
+batch_size:              64
+lr:                      0.0005
+n_negatives:             128
+adversarial_temperature: 1.0
+checkpoint_every:        10000
+derived_frac:            0.5
+
+generator:
+  n_kg: 2000
+  use_rules: true
+
+# ULTRA reasoner, frozen (Appendix O: 6+6 GNN layers, hidden 64, 168,070 params)
+rel_model:
+  num_layers: 6
+  hidden_dim: 64
+entity_model:
+  num_layers: 6
+  hidden_dim: 64

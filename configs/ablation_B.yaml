@@ -1,0 +1,46 @@
+# ===========================================================================
+# Ablation B (arm: ablation_b) -- NO RULES, varied statistics  (Table 3 cell B)
+#
+# Paper §4.2 / Table 3: mean MRR 0.316 +/- 0.006 over the 54 graphs
+# (external-hard 0.157); B stays 4.8 points below ULTRA-Real (B vs. ULTRA
+# contrast -0.048, p < 0.001), arguing against unique-edge count or
+# topology diversity alone: rules are necessary.
+#
+# Rewiring (Appendix N): all rule templates are off; derived edges of each
+# head relation are rewired with 10 |E_r| degree-preserving directed
+# double-edge swaps per head relation, which preserves in/out-degree
+# sequences but destroys the rule correlation (only 0.4% of rewired edges
+# remain grounded, trace/defaults.py NO_RULES_RESIDUAL_RULE_FRACTION).
+# Statistics axes stay BROAD (varied), matching A on that axis.
+# Generate with:
+#   python scripts/generate_corpus.py --config configs/ablation_B.yaml
+# ===========================================================================
+
+arm: ablation_b
+corpus_dir: data/corpus/ablation_B
+out_dir:    checkpoints/ablation_B
+
+supervision: premise_faithful   # identical construction; only the generator varies
+
+# Training (released ULTRA configuration, identical to every other arm)
+n_steps:                 200000
+batch_size:              64
+lr:                      0.0005
+n_negatives:             128
+adversarial_temperature: 1.0
+checkpoint_every:        10000
+derived_frac:            0.5    # same 50/50 query mixing as A
+
+generator:
+  n_kg:                 2000
+  use_rules:            false   # rule templates off (Appendix N rewiring)
+  no_rules_swap_factor: 10      # 10 |E_r| degree-preserving directed
+                                # double-edge swaps per head relation
+
+# ULTRA reasoner, frozen (Appendix O)
+rel_model:
+  num_layers: 6
+  hidden_dim: 64
+entity_model:
+  num_layers: 6
+  hidden_dim: 64

@@ -1,0 +1,42 @@
+# ===========================================================================
+# Corpus-level control: 3-Cycled (arm: control_3cycled)
+#
+# Paper §4.3 / Table 4: mean MRR .339 all / .357 disjoint / .312 proximal
+# / .179 external-hard, at the same 200K-step budget with rules and
+# premise-faithful supervision throughout.
+#
+# Construction (Appendix H): three FULL-GENERATOR KGs with 68K, 74K and
+# 71K training edges, visited round-robin (66.7K visits/KG), replicating
+# ULTRA-Real's cycling pattern on synthetic data -- rules out "few big
+# graphs cycled many times" as TRACE's advantage.
+# Generate with:
+#   python scripts/generate_corpus.py --config configs/control_3cycled.yaml
+# ===========================================================================
+
+arm: control_3cycled
+corpus_dir: data/corpus/control_3cycled
+out_dir:    checkpoints/control_3cycled
+
+supervision: premise_faithful   # rules + provenance-aware supervision (all controls)
+
+# Training (released ULTRA configuration, identical to every other arm)
+n_steps:                 200000
+batch_size:              64
+lr:                      0.0005
+n_negatives:             128
+adversarial_temperature: 1.0
+checkpoint_every:        10000
+derived_frac:            0.5
+
+generator:
+  n_kg: 3                       # 3 full-generator KGs, round-robin (App. H)
+  use_rules: true
+  target_edges_per_kg: [68000, 74000, 71000]   # training edges per KG
+
+# ULTRA reasoner, frozen (Appendix O)
+rel_model:
+  num_layers: 6
+  hidden_dim: 64
+entity_model:
+  num_layers: 6
+  hidden_dim: 64

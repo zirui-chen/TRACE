@@ -1,0 +1,40 @@
+# ===========================================================================
+# Corpus-level control: Compute-Matched (arm: control_compute_matched)  [NEW]
+#
+# Paper §4.3 / Table 4: mean MRR .367 all / .367 disjoint / .367 proximal
+# / .192 external-hard (1,800 KGs, 128M edges, 83 visits/KG, 48 GPU-h).
+# TRACE stopped early at 150K steps so that the GPU-hour budget equals
+# ULTRA-Real's 48 GPU-hours/seed (Appendix H) -- the 64 -> 48 GPU-hour
+# gap is per-KG cache loading, not extra compute, so compute is ruled out
+# as a confound (.367 vs. .369 for full TRACE).
+#
+# IDENTICAL to configs/trace.yaml except n_steps: 150000.
+# ===========================================================================
+
+arm: control_compute_matched
+corpus_dir: data/corpus/trace            # same corpus as TRACE (App. H)
+out_dir:    checkpoints/control_compute_matched
+
+supervision: premise_faithful   # rules + provenance-aware supervision (all controls)
+
+# Training: TRACE stopped early at 150K steps = 48 GPU-hours (App. H);
+# everything else is the released ULTRA configuration, unchanged.
+n_steps:                 150000   # compute-matched: 48 GPU-h like ULTRA-Real
+batch_size:              64
+lr:                      0.0005
+n_negatives:             128
+adversarial_temperature: 1.0
+checkpoint_every:        10000
+derived_frac:            0.5
+
+generator:
+  n_kg:      2000          # 1,800 train + 200 selection KGs, as in TRACE
+  use_rules: true          # all seven templates T1-T7
+
+# ULTRA reasoner, frozen (Appendix O)
+rel_model:
+  num_layers: 6
+  hidden_dim: 64
+entity_model:
+  num_layers: 6
+  hidden_dim: 64

@@ -1,0 +1,47 @@
+# TRACE-Real arm of the corpus x supervision factorial (paper Fig. 2d,
+# Sec. 3.2, Sec. 4.1 "Four-arm setup", Appendix I): the SAME 3 real
+# pretraining graphs as configs/ultra_real.yaml, but with PREMISE-FAITHFUL
+# task construction.
+#
+# AnyBURL (100 s per graph, rule length <= 3) runs on each training split;
+# rules with confidence >= 0.8 and support >= 10 are kept (1,240 rules in
+# the frozen paper run).  Every training triple predicted by a retained
+# rule and present in the training split is a derived query (23% coverage);
+# its body groundings are premises -- permanently observable, never
+# targets.  All other training triples are background queries.  Each
+# 64-query batch mixes 50/50 derived/background (derived_frac 0.5,
+# Table 10a argmax); model selection uses the REAL validation splits, as
+# in ULTRA-Real.  Rules are read from the JSON caches in real.rules_dir
+# (mine once with scripts/mine_rules.py, or use the frozen release set).
+#
+# Everything except the corpus / supervision is IDENTICAL across the four
+# arms (Fig. 2d) and to ultra_real.yaml above: released ULTRA config
+# (Appendix O) -- 6 layers each, hidden dim 64 (168,070 params), AdamW
+# lr 5e-4, 128 self-adversarial negatives at temp 1.0, batch 64, 200K steps.
+
+arm: trace_real
+supervision: premise_faithful
+
+real:
+  kg_dir: data/pretraining
+  graphs: [FB15k-237, WN18RR, CoDEx-M]
+  rules_dir: data/rules
+  derived_frac: 0.5
+
+out_dir: checkpoints/trace_real
+
+# Training (released ULTRA config, Appendix O / trace.defaults.py)
+n_steps:                 200000
+batch_size:              64
+lr:                      0.0005
+n_negatives:             128
+adversarial_temperature: 1.0
+checkpoint_every:        10000
+
+# ULTRA reasoner (frozen across every arm)
+rel_model:
+  num_layers: 6
+  hidden_dim: 64
+entity_model:
+  num_layers: 6
+  hidden_dim: 64

@@ -1,0 +1,50 @@
+# ===========================================================================
+# Sensitivity analysis: corpus_size_250  (arm: trace) -- Table 10, axis (b) corpus size = 250 KGs
+#
+# Table 10, row: syn-val MRR .497   |   real-54 MRR .345
+#
+# Corpus-size selection rule, fixed in advance (App. K): take the smallest
+# size whose syn-val MRR is within 0.005 of the largest size tested. The
+# largest tested is 4,000 (syn-val .534); 2,000 (syn-val .531) is the first
+# size meeting the 0.005 rule, so 2,000 is the default (configs/trace.yaml).
+#
+# For every axis the DEFAULT (bold row in Table 10) is the synthetic-validation
+# argmax: syn-val .531 / real-54 .369 (configs/trace.yaml). 3 seeds per
+# configuration (default: 5); syn-val is the selection criterion, real-54 MRR
+# was computed once after freezing (Appendix K).
+#
+# Scoring uses a common pool of 200 held-out synthetic KGs per configuration,
+# merged across all configurations of the axis, so no configuration is favored
+# by its own validation distribution (Appendix K).
+# Generate with:
+#   python scripts/generate_corpus.py --config configs/sensitivity/corpus_size_250.yaml
+# ===========================================================================
+
+arm: trace
+corpus_dir: data/corpus/sensitivity/corpus_size_250
+out_dir:    checkpoints/sensitivity/corpus_size_250
+
+supervision: premise_faithful   # default TRACE task construction unless a
+                                # split_ablation above overrides it
+
+
+# Training (released ULTRA configuration, Appendix O; same for every arm)
+n_steps:                 200000
+batch_size:              64
+lr:                      0.0005
+n_negatives:             128
+adversarial_temperature: 1.0
+checkpoint_every:        10000
+derived_frac:            0.5
+
+generator:
+  n_kg: 250
+  use_rules: true
+
+# ULTRA reasoner, frozen (Appendix O: 6+6 GNN layers, hidden 64, 168,070 params)
+rel_model:
+  num_layers: 6
+  hidden_dim: 64
+entity_model:
+  num_layers: 6
+  hidden_dim: 64

@@ -1,0 +1,42 @@
+# ULTRA-Real arm of the corpus x supervision factorial (paper Fig. 2d,
+# Sec. 4.1 "Four-arm setup", Appendix I): 3 real pretraining graphs with
+# STANDARD ULTRA task construction (every training triple is a query;
+# standard 80/10/10 as inherited from benchmarking; queries sampled
+# uniformly from the train split; model selection on the real validation
+# splits, as in ULTRA).
+#
+# Corpus: FB15k-237 (272,115 train edges), WN18RR (86,835) and
+# CoDEx-Medium (185,584) -- 544,534 canonical training edges total
+# (trace.defaults.REAL_TRAIN_SPLITS_EDGES).
+#
+# Everything except the corpus / supervision is IDENTICAL across the four
+# arms (Fig. 2d): the released ULTRA configuration (Appendix O) -- 6
+# layers in each of GNN_r and GNN_e, hidden dim 64 (168,070 trainable
+# parameters), AdamW lr 5e-4, self-adversarial negatives (128, temp 1.0),
+# batch 64, 200K steps.  See configs/trace_real.yaml for the
+# premise-faithful counterpart (Sec. 3.2).
+
+arm: ultra_real
+supervision: standard
+
+real:
+  kg_dir: data/pretraining
+  graphs: [FB15k-237, WN18RR, CoDEx-M]
+
+out_dir: checkpoints/ultra_real
+
+# Training (released ULTRA config, Appendix O / trace.defaults.py)
+n_steps:                 200000
+batch_size:              64
+lr:                      0.0005
+n_negatives:             128
+adversarial_temperature: 1.0
+checkpoint_every:        10000
+
+# ULTRA reasoner (frozen across every arm)
+rel_model:
+  num_layers: 6
+  hidden_dim: 64
+entity_model:
+  num_layers: 6
+  hidden_dim: 64

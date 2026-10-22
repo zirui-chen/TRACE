@@ -1,0 +1,48 @@
+# ===========================================================================
+# Template ablation: l1_l2 (arm: trace) -- Table 9 row "L1+L2"
+#
+# Comes within 0.003 of the full catalog, so L3 (T6, T7) is nearly
+# redundant (§5.3, App. J.2 finding iii).
+#
+# Method (Appendix J.2): rather than re-normalizing the per-level inclusion
+# probabilities 0.70/0.62/0.44 (which would change the expected 4.2 templates
+# per KG), the per-KG TEMPLATE-COUNT DISTRIBUTION of the full catalog is held
+# FIXED, capped at the number of available templates, and templates are drawn
+# UNIFORMLY from the remaining catalog. Same 2,000 KGs and provenance-aware
+# premise-faithful splits as configs/trace.yaml.
+#
+# Expected result (Table 9; 2,000 KGs, 3 seeds, paired-over-graphs 95% CI):
+#   mean MRR (all 54) = .366   vs. full .369,  delta -.003 [-.006, .000]
+#
+# Generate with:
+#   python scripts/generate_corpus.py --config configs/templates/l1_l2.yaml
+# ===========================================================================
+
+arm: trace
+corpus_dir: data/corpus/templates/l1_l2
+out_dir:    checkpoints/templates/l1_l2
+
+supervision: premise_faithful   # provenance-aware (generator) supervision
+
+# Training (released ULTRA configuration, Appendix O; same for every arm)
+n_steps:                 200000
+batch_size:              64
+lr:                      0.0005
+n_negatives:             128
+adversarial_temperature: 1.0
+checkpoint_every:        10000
+derived_frac:            0.5
+
+generator:
+  n_kg: 2000                    # 1,800 train + 200 selection KGs
+  use_rules: true
+  template_pool: [T1, T2, T3, T4, T5]       # remaining catalog (Table 8); count
+                                # distribution fixed, draws uniform
+
+# ULTRA reasoner, frozen (Appendix O: 6+6 GNN layers, hidden 64, 168,070 params)
+rel_model:
+  num_layers: 6
+  hidden_dim: 64
+entity_model:
+  num_layers: 6
+  hidden_dim: 64

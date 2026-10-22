@@ -1,0 +1,49 @@
+# ===========================================================================
+# TRACE (arm: trace) -- synthetic corpus + premise-faithful supervision
+#
+# Paper Table 1, row 4 (TRACE): mean MRR .369 +/- .004 on the 54 zero-shot
+# graphs (.369 disjoint / .369 proximal / .195 external-hard); Table 3
+# cell A = full TRACE (rules on, statistics varied, 0.369 +/- 0.004).
+# Factorial construction: §4.1 and Appendix I; generator: §3.3, Appendix N
+# (Algorithm 1); corpus comparability: Table 7.
+#
+# Corpus: the factorized generator draws 2,000 KGs (1,800 training + 200
+# held-out model-selection KGs, see trace/defaults.py CORPUS_N_*): full
+# template catalog T1-T7 (Table 8) and BROAD priors on all seven statistics
+# axes (n_ent, n_rel, kappa, gamma, mu, eta, nu) -- i.e. no fixed_stats.
+# Generate with:
+#   python scripts/generate_corpus.py --config configs/trace.yaml
+# ===========================================================================
+
+arm: trace
+corpus_dir: data/corpus/trace
+out_dir:    checkpoints/trace
+
+# Premise-faithful task construction (§3.2): rule-body (premise) triples
+# stay observable and are never targets; rule conclusions (derived triples)
+# are prediction targets; provenance is exact from the generator.
+supervision: premise_faithful
+
+# Training (released ULTRA configuration, unchanged across every arm)
+n_steps:                 200000
+batch_size:              64
+lr:                      0.0005
+n_negatives:             128
+adversarial_temperature: 1.0
+checkpoint_every:        10000
+
+# 50/50 derived:non-derived query mix (32+32 of each 64-query batch;
+# synthetic-validation argmax, Table 10a)
+derived_frac: 0.5
+
+generator:
+  n_kg:      2000          # 1,800 train + 200 selection KGs (§4.1, Table 7)
+  use_rules: true          # all seven templates T1-T7 (Table 8)
+
+# ULTRA reasoner, frozen (Appendix O: 6+6 GNN layers, hidden 64, 168,070 params)
+rel_model:
+  num_layers: 6
+  hidden_dim: 64
+entity_model:
+  num_layers: 6
+  hidden_dim: 64

@@ -1,0 +1,51 @@
+# ===========================================================================
+# Template ablation: no_comp (arm: trace) -- Table 9 row "-COMP"
+#
+# REMOVES T4 COMPOSITION -- the largest drop in Table 9 (-0.020),
+# consistent with the importance of multi-hop reasoning in link
+# prediction (§5.3, App. J.2 finding i). The catalog's empty-draw
+# fallback (T4, trace/defaults.py FALLBACK_TEMPLATE) is disabled
+# whenever T4 is not in the pool.
+#
+# Method (Appendix J.2): rather than re-normalizing the per-level inclusion
+# probabilities 0.70/0.62/0.44 (which would change the expected 4.2 templates
+# per KG), the per-KG TEMPLATE-COUNT DISTRIBUTION of the full catalog is held
+# FIXED, capped at the number of available templates, and templates are drawn
+# UNIFORMLY from the remaining catalog. Same 2,000 KGs and provenance-aware
+# premise-faithful splits as configs/trace.yaml.
+#
+# Expected result (Table 9; 2,000 KGs, 3 seeds, paired-over-graphs 95% CI):
+#   mean MRR (all 54) = .349   vs. full .369,  delta -.020 [-.025, -.015]
+#
+# Generate with:
+#   python scripts/generate_corpus.py --config configs/templates/no_comp.yaml
+# ===========================================================================
+
+arm: trace
+corpus_dir: data/corpus/templates/no_comp
+out_dir:    checkpoints/templates/no_comp
+
+supervision: premise_faithful   # provenance-aware (generator) supervision
+
+# Training (released ULTRA configuration, Appendix O; same for every arm)
+n_steps:                 200000
+batch_size:              64
+lr:                      0.0005
+n_negatives:             128
+adversarial_temperature: 1.0
+checkpoint_every:        10000
+derived_frac:            0.5
+
+generator:
+  n_kg: 2000                    # 1,800 train + 200 selection KGs
+  use_rules: true
+  template_pool: [T1, T2, T3, T5, T6, T7]       # remaining catalog (Table 8); count
+                                # distribution fixed, draws uniform
+
+# ULTRA reasoner, frozen (Appendix O: 6+6 GNN layers, hidden 64, 168,070 params)
+rel_model:
+  num_layers: 6
+  hidden_dim: 64
+entity_model:
+  num_layers: 6
+  hidden_dim: 64

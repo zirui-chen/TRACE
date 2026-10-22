@@ -1,0 +1,53 @@
+# ===========================================================================
+# Sensitivity analysis: soft_rules  (arm: trace) -- Table 10, axis (f) rule form = soft rules, epsilon ~ U(0, 0.3)
+#
+# Table 10, row: syn-val MRR .526   |   real-54 MRR .371
+#
+# Each derived conclusion survives independently with probability
+# epsilon ~ U(0, 0.3) (soft rules, §K row (f)); survivors follow the
+# normal provenance split. Slight real-54 gain (.371 vs .369) while
+# syn-val sits marginally below the default (.526 vs .531); rules stay
+# hard by default (App. A).
+#
+# For every axis the DEFAULT (bold row in Table 10) is the synthetic-validation
+# argmax: syn-val .531 / real-54 .369 (configs/trace.yaml). 3 seeds per
+# configuration (default: 5); syn-val is the selection criterion, real-54 MRR
+# was computed once after freezing (Appendix K).
+#
+# Scoring uses a common pool of 200 held-out synthetic KGs per configuration,
+# merged across all configurations of the axis, so no configuration is favored
+# by its own validation distribution (Appendix K).
+# Generate with:
+#   python scripts/generate_corpus.py --config configs/sensitivity/soft_rules.yaml
+# ===========================================================================
+
+arm: trace
+corpus_dir: data/corpus/sensitivity/soft_rules
+out_dir:    checkpoints/sensitivity/soft_rules
+
+supervision: premise_faithful   # default TRACE task construction unless a
+                                # split_ablation above overrides it
+
+rule_form: soft
+epsilon_range: [0.0, 0.3]
+
+# Training (released ULTRA configuration, Appendix O; same for every arm)
+n_steps:                 200000
+batch_size:              64
+lr:                      0.0005
+n_negatives:             128
+adversarial_temperature: 1.0
+checkpoint_every:        10000
+derived_frac:            0.5
+
+generator:
+  n_kg: 2000
+  use_rules: true
+
+# ULTRA reasoner, frozen (Appendix O: 6+6 GNN layers, hidden 64, 168,070 params)
+rel_model:
+  num_layers: 6
+  hidden_dim: 64
+entity_model:
+  num_layers: 6
+  hidden_dim: 64

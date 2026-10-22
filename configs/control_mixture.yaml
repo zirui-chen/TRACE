@@ -1,0 +1,57 @@
+# ===========================================================================
+# Corpus-level control: Mixture real + synthetic (arm: control_mixture)  [NEW]
+#
+# Paper §4.3 / Table 4: mean MRR .376 all / .370 disjoint / .384 proximal
+# / .193 external-hard (1,803 KGs, 128M edges, 60 GPU-h). This is the
+# practical optimum recommended in §4.3 and Appendix A: it keeps the
+# source-disjoint gain of the synthetic corpus (.370 vs. .369 pure
+# synthetic) while cutting the source-proximal regression to -0.003
+# (.384 vs. ULTRA-Real's .387).
+#
+# Construction (Appendix H): each step draws from the three real graphs or
+# from the TRACE corpus with probability 0.5 each, and each source keeps
+# its own supervision -- the real graphs use their (AnyBURL-free) ULTRA
+# standard splits with selection on the real validation splits, the
+# synthetic corpus uses premise-faithful provenance supervision.
+# Requires both corpora on disk:
+#   python scripts/generate_corpus.py --config configs/trace.yaml
+#   (real graphs under mixture.real.kg_dir, canonical ULTRA splits)
+# ===========================================================================
+
+arm: control_mixture
+corpus_dir: data/corpus/trace            # synthetic side: the TRACE corpus
+out_dir:    checkpoints/control_mixture
+
+# Per-source supervision (each source keeps its own; §4.1, App. H):
+# synthetic side premise-faithful, real side standard -- encoded by the
+# mixture block below.
+supervision: premise_faithful
+
+# Training (released ULTRA configuration, identical to every other arm)
+n_steps:                 200000
+batch_size:              64
+lr:                      0.0005
+n_negatives:             128
+adversarial_temperature: 1.0
+checkpoint_every:        10000
+derived_frac:            0.5             # applies to the synthetic side
+
+# 50/50 step-level mixing (App. H): a step is drawn from the real graphs
+# or the TRACE corpus with probability 0.5 each.
+mixture:
+  prob_real: 0.5
+  real:
+    kg_dir: data/pretraining
+    graphs: [FB15k-237, WN18RR, CoDEx-M]   # canonical ULTRA pretraining trio
+
+generator:
+  n_kg:      2000                          # synthetic side = TRACE corpus
+  use_rules: true
+
+# ULTRA reasoner, frozen (Appendix O)
+rel_model:
+  num_layers: 6
+  hidden_dim: 64
+entity_model:
+  num_layers: 6
+  hidden_dim: 64

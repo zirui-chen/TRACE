@@ -1,0 +1,49 @@
+# ===========================================================================
+# Ablation D (arm: ablation_d) -- NO RULES, FIXED statistics (Table 3 cell D)
+#
+# Paper §4.2 / Table 3: mean MRR 0.290 +/- 0.006 over the 54 graphs
+# (external-hard 0.148). Both generator axes are removed: rules are off
+# (degree-preserving rewiring, Appendix N) and all statistics are fixed at
+# the prior medians (trace/defaults.py FIXED_STATS). A vs. D (+0.079,
+# p < 0.001) is the joint effect of both axes; the (A-B)-(C-D) interaction
+# is +0.005 (p = 0.21), supporting additive contributions.
+# Generate with:
+#   python scripts/generate_corpus.py --config configs/ablation_D.yaml
+# ===========================================================================
+
+arm: ablation_d
+corpus_dir: data/corpus/ablation_D
+out_dir:    checkpoints/ablation_D
+
+supervision: premise_faithful   # identical construction; only the generator varies
+
+# Training (released ULTRA configuration, identical to every other arm)
+n_steps:                 200000
+batch_size:              64
+lr:                      0.0005
+n_negatives:             128
+adversarial_temperature: 1.0
+checkpoint_every:        10000
+derived_frac:            0.5    # same 50/50 query mixing as A
+
+generator:
+  n_kg:                 2000
+  use_rules:            false   # rule templates off (Appendix N rewiring)
+  no_rules_swap_factor: 10      # 10 |E_r| degree-preserving directed
+                                # double-edge swaps per head relation
+  fixed_stats:                  # prior medians (trace/defaults.py FIXED_STATS)
+    n_ent: 1732
+    n_rel: 34
+    kappa: 1.0
+    gamma: 2.25
+    mu:    12.2
+    eta:   0.25
+    nu:    0.05
+
+# ULTRA reasoner, frozen (Appendix O)
+rel_model:
+  num_layers: 6
+  hidden_dim: 64
+entity_model:
+  num_layers: 6
+  hidden_dim: 64
